@@ -6,25 +6,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// GET doctors by specialization
 app.get("/doctors", async (req, res) => {
   try {
     const { specialization } = req.query;
-
     let doctorsRef = db.collection("doctors");
     let snapshot;
 
     if (specialization) {
-      snapshot = await doctorsRef.where("specialization", "==", specialization).get();
+      const normalized = specialization.charAt(0).toUpperCase() + specialization.slice(1).toLowerCase();
+      snapshot = await doctorsRef.where("specialization", "==", normalized).get();
     } else {
       snapshot = await doctorsRef.get();
     }
 
-    if (snapshot.empty) {
-      return res.json([]);
-    }
+    if (snapshot.empty) return res.json([]);
 
-    const doctors = snapshot.docs.map(doc => doc.data());
+    const doctors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(doctors);
 
   } catch (error) {
@@ -33,6 +30,4 @@ app.get("/doctors", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("✅ Server running on http://localhost:5000");
-});
+app.listen(5000, () => console.log("✅ Server running on http://localhost:5000"));
